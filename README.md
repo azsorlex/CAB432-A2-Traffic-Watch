@@ -3,16 +3,13 @@ A NodeJS application which uses OpenCV to capture the feed of numerous public we
 
 # Usage
 ## Installation
-Before running ```npm install```, certain packages have to be already installed for it to work. These packages depend on the OS used.
+Before running ```npm install```, certain packages have to be already installed for it to work. These packages and the installation processes behind them depend on the OS used.
 
 ###### Ubuntu
-```build-essential cmake git```. This can be seen in the Dockerfile.
-
-###### Arch Linux
-
+Run ```sudo apt install build-essential cmake git```.
 
 ###### Windows
-
+Install [Git](https://git-scm.com/) and [CMake](https://cmake.org/download/). For CMake, make sure it's added to the path during installation. Then run ```npm install --g windows-build-tools``` within an administrator PowerShell window.
 
 ## API Keys
 The Google Maps Javascript and QLDTraffic GeoJSON APIs are used in this application, and their API keys are required for this application to work.  Copy ".env.sample", rename it as ".env", and then appropriately add the keys into .env.
