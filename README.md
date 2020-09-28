@@ -9,7 +9,7 @@ Before running ```npm install```, certain packages have to be already installed 
 Run ```sudo apt install build-essential cmake git```.
 
 ### Windows
-Install [Git](https://git-scm.com/) and [CMake](https://cmake.org/download/). For CMake, make sure it's added to the path during installation. Then run ```npm install --g windows-build-tools``` within an administrator PowerShell window.
+Install [Git](https://git-scm.com/) and [CMake](https://cmake.org/download/). For CMake, make sure it's added to the path during installation. Then run ```npm install -g windows-build-tools``` within an administrator PowerShell window.
 
 ## API Keys
 The Google Maps Javascript and QLDTraffic GeoJSON APIs are used in this application, and their API keys are required for this application to work.  Copy ".env.sample", rename it as ".env", and then appropriately add the keys into .env.
