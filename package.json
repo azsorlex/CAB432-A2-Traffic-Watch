@@ -1,5 +1,6 @@
 {
   "name": "cab432-a2-alex-ethan",
+  "description": "A NodeJS application written by Alexander Rozsa and Ethan Knight which uses OpenCV to capture the feed of numerous public webcams and count the number of vehicles in-frame. This was deployed to AWS and utilised EC2 load balancing, ElastiCache and S3.",
   "version": "0.0.0",
   "scripts": {
     "start": "node ./bin/www"
@@ -8,14 +9,14 @@
     "type": "git",
     "url": "git+https://github.com/azsorlex/CAB432-A2-Alex-Ethan.git"
   },
-  "author": "Alex Rozsa & Ethan Knight",
+  "author": "Alexander Rozsa & Ethan Knight",
   "license": "UNLICENCED",
   "bugs": {
     "url": "https://github.com/azsorlex/CAB432-A2-Alex-Ethan/issues"
   },
   "homepage": "https://github.com/azsorlex/CAB432-A2-Alex-Ethan#readme",
   "dependencies": {
-    "aws-sdk": "^2.761.0",
+    "aws-sdk": "^2.762.0",
     "axios": "^0.20.0",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",

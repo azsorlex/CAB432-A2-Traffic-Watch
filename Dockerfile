@@ -1,8 +1,9 @@
-FROM node:erbium
+FROM node
 
-COPY . .
+COPY . /opt
+WORKDIR /opt
 
-RUN apt-get update && apt-get full-upgrade -y && apt-get install -y build-essential cmake git
+RUN apt-get update && apt-get install -y build-essential cmake git
 RUN npm install
 
 EXPOSE 3000

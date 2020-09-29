@@ -1,8 +1,22 @@
-body {
-  padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+#map,
+#webcamoverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }
 
-a {
-  color: #00B7FF;
+#webcamoverlay {
+  display: none;
+  cursor: wait;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  background: rgba(0, 0, 0, 0.700);
+}
+
+#webcamdisplay {
+  
 }

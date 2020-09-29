@@ -1,6 +1,3 @@
-node_modules
-.dockerignore
+**/node_modules/*
 .env.sample
 .gitignore
-Dockerfile
-README.md

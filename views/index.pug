@@ -1,5 +1,8 @@
 extends layout
 
 block content
-  p Maps API key: #{MAPS_JS_API_KEY}
-  p Webcam API key: #{QLDTRAFFIC_GEOJSON_API_KEY}
+  #map
+  #webcamoverlay
+    #webcamdisplay
+  script(id="mapScript" webcamData=webcamData src="/javascripts/map.js")
+  script(defer src=`https://maps.googleapis.com/maps/api/js?key=${MAPS_JS_API_KEY}&callback=initMap`)
