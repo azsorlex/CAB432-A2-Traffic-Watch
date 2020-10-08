@@ -17,15 +17,21 @@ function initMap() {
     // Add a marker for the webcam to the map
     const marker = new google.maps.Marker({
       map,
-      position: cam.location,
-      title: cam.name
+      position: {lat: cam.geometry.coordinates[1], lng: cam.geometry.coordinates[0]},
+      title: cam.properties.description
     });
 
     // Create an Info Window that appears when the marker is clicked on
     const infowindow = new google.maps.InfoWindow({
       content:
-        `<h2>${cam.name}</h2>` +
-        `<a href=# onclick="javascript:queryOpenCV('${cam.location.lat}')">View live feed</a>`
+        //`<img src="${cam.properties.image_url}" alt="Still image of the camera"</img>` +
+        //`<video id="streamPlayer">` +
+        //`<source src="${cam.properties.url}" type="rtmp/mp4"</source>` +
+        //`</video>` +
+        `<h2>${cam.properties.description}</h2>` +
+        
+        `<p>Direction: ${cam.properties.direction}</p>` +
+        `<a href=# onclick="javascript:queryOpenCV('${cam.properties.id}')">View live feed</a>`
     });
 
     // Open the info window when the marker is clicked
@@ -43,9 +49,9 @@ function closeCurrentInfoWindow() {
   } catch (e) { }
 }
 
-function queryOpenCV(webcamData) {
+function queryOpenCV(webcamID) {
   // Query OpenCV, then do something with the response
-  fetch(`/opencv/${webcamData}`)
+  fetch(`/opencv/${webcamID}`)
     .then((res) => res.json())
     .then((data) => {
 
@@ -55,7 +61,4 @@ function queryOpenCV(webcamData) {
   // Show the window where the detailed information will be displayed
   const webcamoverlay = document.getElementById("webcamoverlay");
   webcamoverlay.style.display = "flex";
-
-  // Just an example
-  webcamoverlay.innerHTML = webcamData;
 }

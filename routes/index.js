@@ -8,9 +8,9 @@ require('dotenv').config();
 router.get('/', function(req, res, next) {
   const { QLDTRAFFIC_GEOJSON_API_KEY } = process.env;
 
-  const someArray = [{name: "Alex", location: {lat: -27, lng: 150}}, {name: "Ethan", location: {lat: -27.5, lng: 155}}];
-
-  res.render('index', { MAPS_JS_API_KEY: process.env.MAPS_JS_API_KEY, webcamData: JSON.stringify(someArray) });
+  axios.get(`https://api.qldtraffic.qld.gov.au/v1/webcams?apikey=${QLDTRAFFIC_GEOJSON_API_KEY}`)
+    .then((response) => res.render('index', { MAPS_JS_API_KEY: process.env.MAPS_JS_API_KEY, webcamData: JSON.stringify(response.data.features) }))
+    .catch((error) => res.render('index', { MAPS_JS_API_KEY: process.env.MAPS_JS_API_KEY, webcamData: JSON.stringify([{}]) }));
 });
 
 module.exports = router;

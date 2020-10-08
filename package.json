@@ -16,7 +16,7 @@
   },
   "homepage": "https://github.com/azsorlex/CAB432-A2-Alex-Ethan#readme",
   "dependencies": {
-    "aws-sdk": "^2.762.0",
+    "aws-sdk": "^2.769.0",
     "axios": "^0.20.0",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
