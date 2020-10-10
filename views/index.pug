@@ -3,6 +3,7 @@ extends layout
 block content
   #map
   #webcamoverlay
-    #webcamdisplay
+    canvas#mychart
+  script(src="/chart.js/dist/Chart.min.js")
   script(id="mapScript" webcamData=webcamData src="/javascripts/map.js")
   script(defer src=`https://maps.googleapis.com/maps/api/js?key=${MAPS_JS_API_KEY}&callback=initMap`)

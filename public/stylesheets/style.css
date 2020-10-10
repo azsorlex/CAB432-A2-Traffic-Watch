@@ -9,7 +9,7 @@
 
 #webcamoverlay {
   display: none;
-  cursor: wait;
+  cursor: pointer;
   text-align: center;
   justify-content: center;
   align-items: center;
@@ -17,6 +17,9 @@
   background: rgba(0, 0, 0, 0.700);
 }
 
-#webcamdisplay {
-  
+#mychart {
+  width: 50%;
+  height: 50%;
+  background: white;
+  cursor: default;
 }
