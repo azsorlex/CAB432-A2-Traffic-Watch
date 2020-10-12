@@ -6,7 +6,7 @@ const logger = require('morgan');
 
 const indexRouter = require('./routes/index');
 //const opencvRouter = require('./routes/opencv');
-const tfjsRouter = require('./routes/tensorflow');
+const tfRouter = require('./routes/tensorflow');
  
 const app = express();
 
@@ -22,7 +22,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'node_modules')));
 
 app.use('/', indexRouter);
-app.use('/tensorflow', tfjsRouter);
+app.use('/tensorflow', tfRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

@@ -63,7 +63,7 @@ function queryOpenCV(imageURL, imageID) {
 // Query the server to get the results for a particular camera, then display them
 function displayGraph(id) {
   const ctx = document.getElementById('mychart').getContext('2d');
-  fetch(`/opencv/graph/${id}`)
+  fetch(`/tensorflow/graph/${id}`)
     .then((res) => res.json())
     .then((data) => {
       const chart = new Chart(ctx, {

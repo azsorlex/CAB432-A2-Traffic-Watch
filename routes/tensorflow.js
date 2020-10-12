@@ -2,11 +2,9 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const aws = require('aws-sdk');
-const tf = require('@tensorflow/tfjs');
+require('@tensorflow/tfjs-backend-cpu');
 const cocoSsd = require('@tensorflow-models/coco-ssd');
-const chartjs = require('chart.js');
-require('dotenv').config();
-require('@tensorflow/tfjs-node');
+const tf = require('@tensorflow/tfjs-node');
 
 /* Process the webcam's feed and send the results back to the client */
 router.get('/', function (req, res, next) { 
