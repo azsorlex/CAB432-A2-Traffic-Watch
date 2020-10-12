@@ -5,8 +5,9 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 
 const indexRouter = require('./routes/index');
-const opencvRouter = require('./routes/opencv');
-
+//const opencvRouter = require('./routes/opencv');
+const tfjsRouter = require('./routes/tensorflow');
+ 
 const app = express();
 
 // view engine setup
@@ -21,7 +22,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'node_modules')));
 
 app.use('/', indexRouter);
-app.use('/opencv', opencvRouter);
+app.use('/tensorflow', tfjsRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
