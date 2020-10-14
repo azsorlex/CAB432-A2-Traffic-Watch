@@ -9,7 +9,7 @@ const cocoSsd = require('@tensorflow-models/coco-ssd');
 const tfn=require('@tensorflow/tfjs-node');
 //const tfds=require('@tensorflow/tfjs-data');
 
-const { Image,createCanvas } = require('canvas');
+const { Image,createCanvas,loadImage } = require('canvas');
 const canvas = createCanvas(500,500);
 const ctx = canvas.getContext('2d');
 
@@ -40,7 +40,7 @@ const readImage = url => {
   return tfimage;
 }
 
-async function loadImage(url){
+/*async function loadImage(url){
   const image= new Image();
   const promise = new promise((resolve,reject) =>{
     image.crossOrign = '';
@@ -50,18 +50,31 @@ async function loadImage(url){
   });
   image.src=url;
   return promise;
-}
+}*/
 
-async function setup(url) {
+function setup(url) {
      
-     var img= await loadImage(url);
-     console.log('\n\n\n'+img+'\n');
-    let tensor=tfn.browser.fromPixels(img);
+     var img=loadImage(url);
+     img.then(()=>{
+        console.log('\n\n\n'+img+'\n');
+        let tensor=tfn.browser.fromPixels(img.Image);
+        console.log(tensor);
+        const model = cocoSsd.load();
+        model.then(()=>{
+          const predictions = model.detect(tensor);
+          predictions.then(()=>{
+            console.log('Predictions: ');
+            console.log(predictions);
+          })
+        
+        })
+       
+     }).catch( err =>{
+       console.log(err);
+     })
+     
+    
      //await tf.setBackend('cpu');
-     console.log(tensor);
-    const model = await cocoSsd.load();
-    const predictions = await model.detect(tensor);
-    console.log('Predictions: ');
-    console.log(predictions);
+     
 }
 module.exports = router;
