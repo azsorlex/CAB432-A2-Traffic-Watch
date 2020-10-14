@@ -2,23 +2,28 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const aws = require('aws-sdk');
+
 require('@tensorflow/tfjs-backend-cpu');
 const cocoSsd = require('@tensorflow-models/coco-ssd');
-//const tf = require('@tensorflow/tfjs');
+
 const tfn=require('@tensorflow/tfjs-node');
 //const tfds=require('@tensorflow/tfjs-data');
 
-const { Image,createCanvas, loadImage } = require('canvas');
-const { getImageType } = require('@tensorflow/tfjs-node/dist/image');
-var { image } = require('@tensorflow/tfjs-node');
+const { Image,createCanvas } = require('canvas');
+const canvas = createCanvas(500,500);
+const ctx = canvas.getContext('2d');
+
 /* Process the webcam's feed and send the results back to the client */
 router.get('/', function (req, res, next) { 
   //https://webcams.qldtraffic.qld.gov.au/Sunshine_Coast/MRNCHD-435.jpg?
   //const url ='https://webcams.qldtraffic.qld.gov.au/Sunshine_Coast/MRNCHD-435.jpg';
   const url= 'https://upload.wikimedia.org/wikipedia/commons/e/e4/Cars_in_traffic_in_Auckland%2C_New_Zealand_-_copyright-free_photo_released_to_public_domain.jpg';
   //const url = req.params.url;//.replace(/\$/g, '/'); // Change the $ back into /
-  image=setImage(url);
-  setup(image);
+  //const img=new Image();
+  //img.onload=()=>ctx.drawImage(img,0,0);
+  //img.onerror = err => {throw err};
+  //img.src=url;
+  setup(url);
     //process the image using tensorflow
 });
 
@@ -29,27 +34,33 @@ router.get('/graph/:id', function (req, res, next) {
     res.json([{}]); // Just a blank response
 });
 
-async function setImage(url){
-  const canvas=createCanvas(800,600);
-  const ctx = canvas.getContext('2d');
-  let img=new Image();
-  img.onload= () => ctx.drawImage(img,0,0);
-  img.onerror = err => {throw err};
-  img.src=url;
-  var dataURL = canvas.toDataURL(base64Img);
-  image = tfn.browser.fromPixels(dataURL);
-  return image;
+const readImage = url => {
+  const imageBuffer=loadImage(url);
+  const tfimage=tfn.node.decodeImage(imageBuffer);
+  return tfimage;
 }
 
-async function setup(img) {
-     // Load the model.
-     //let image= await loadImage(img);
-     console.log('here');
-     console.log(img);
+async function loadImage(url){
+  const image= new Image();
+  const promise = new promise((resolve,reject) =>{
+    image.crossOrign = '';
+    image.onload = () => {
+      resolve(image);
+    };
+  });
+  image.src=url;
+  return promise;
+}
+
+async function setup(url) {
+     
+     var img= await loadImage(url);
+     console.log('\n\n\n'+img+'\n');
+    let tensor=tfn.browser.fromPixels(img);
      //await tf.setBackend('cpu');
+     console.log(tensor);
     const model = await cocoSsd.load();
-    console.log('here2');
-    const predictions = await model.detect(img);
+    const predictions = await model.detect(tensor);
     console.log('Predictions: ');
     console.log(predictions);
 }
