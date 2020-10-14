@@ -18,9 +18,12 @@
   "dependencies": {
     "@tensorflow-models/coco-ssd": "^2.1.0",
     "@tensorflow/tfjs-backend-cpu": "^2.6.0",
+    "@tensorflow/tfjs-backend-webgl": "^2.6.0",
+    "@tensorflow/tfjs-data": "^2.6.0",
     "@tensorflow/tfjs-node": "^2.6.0",
     "aws-sdk": "^2.771.0",
     "axios": "^0.20.0",
+    "canvas": "^2.6.1",
     "chart.js": "^2.9.3",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
