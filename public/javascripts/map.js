@@ -42,6 +42,9 @@ function initMap() {
       currentInfoWindow = infowindow;
       infowindow.open(map, marker);
     })
+
+    queryTF(cam.properties.image_url) // Get the prediction for the imgae.
+    setInterval(queryTF(cam.properties.image_url), 60000); // Run the above every 60 seconds
   });
 }
 
@@ -51,11 +54,11 @@ function closeCurrentInfoWindow() {
   } catch (e) { }
 }
 
-function queryOpenCV(imageURL, imageID) {
-  fetch(`/opencv/${imageURL.replace(/\//g, '$')}`) // Alter the URL so that all / are replaced with $
+function queryTF(imageURL) {
+  fetch(`/tensorflow/${imageURL.replace(/\//g, '$')}`) // Alter the URL so that all / are replaced with $
     .then((res) => res.json())
     .then((data) => {
-      document.getElementById(imageID).src = data; // An example for how to update the image
+      console.log(data);
     })
     .catch((error) => console.log(error))
 }
