@@ -8,7 +8,9 @@ function initMap() {
     document.getElementById('map'), { zoom: 5, center: { lat: -22, lng: 145 } });
 
   // Get the data that was passed through from the server
-  const webcamData = JSON.parse(document.getElementById("mapScript").getAttribute("webcamData"));
+  let webcamData;
+  fetch('/getwebcamdata')
+    .then(response => webcamData = JSON.parse(response));
 
   // Add a click event to the graph housing element which will hide itself
   const webcamoverlay = document.getElementById("webcamoverlay");
@@ -43,6 +45,10 @@ function initMap() {
       closeCurrentInfoWindow();
       currentInfoWindow = infowindow;
       infowindow.open(map, marker);
+
+      // Update the associated image
+      document.getElementById(cam.properties.id).src = cam.properties.image_url // + new Date().getTime();
+      updateImage(cam.properties.id);
     })
     //ensure each camera can be accessed individually via the camId
     queryTF(cam.properties.image_url,camId) // Get the prediction for the imgae.
@@ -57,8 +63,8 @@ function closeCurrentInfoWindow() {
   } catch (e) { }
 }
 
-function queryTF(imageURL,camId) {
-  fetch(`/tensorflow/${imageURL.replace(/\//g, '$')}/${camId}`) // Alter the URL so that all / are replaced with $
+function updateImage(id) {
+  fetch(`/tensorflow/getpredictions/${id}`)
     .then((res) => res.json())
     .then((data) => {
       console.log(data);
@@ -69,7 +75,7 @@ function queryTF(imageURL,camId) {
 // Query the server to get the results for a particular camera, then display them
 function displayGraph(id) {
   const ctx = document.getElementById('mychart').getContext('2d');
-  fetch(`/tensorflow/graph/${id}`)
+  fetch(`/tensorflow/getgraph/${id}`)
     .then((res) => res.json())
     .then((data) => {
       const chart = new Chart(ctx, {
