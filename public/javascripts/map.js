@@ -1,6 +1,8 @@
 let currentInfoWindow;
 
 function initMap() {
+
+  let camId=0;
   // Initialise the map
   const map = new google.maps.Map(
     document.getElementById('map'), { zoom: 5, center: { lat: -22, lng: 145 } });
@@ -42,9 +44,10 @@ function initMap() {
       currentInfoWindow = infowindow;
       infowindow.open(map, marker);
     })
-
-    queryTF(cam.properties.image_url) // Get the prediction for the imgae.
-    setInterval(queryTF(cam.properties.image_url), 60000); // Run the above every 60 seconds
+    //ensure each camera can be accessed individually via the camId
+    queryTF(cam.properties.image_url,camId) // Get the prediction for the imgae.
+    setInterval(queryTF(cam.properties.image_url,camId), 60000); // Run the above every 60 seconds
+    camId++;
   });
 }
 
@@ -54,8 +57,8 @@ function closeCurrentInfoWindow() {
   } catch (e) { }
 }
 
-function queryTF(imageURL) {
-  fetch(`/tensorflow/${imageURL.replace(/\//g, '$')}`) // Alter the URL so that all / are replaced with $
+function queryTF(imageURL,camId) {
+  fetch(`/tensorflow/${imageURL.replace(/\//g, '$')}/${camId}`) // Alter the URL so that all / are replaced with $
     .then((res) => res.json())
     .then((data) => {
       console.log(data);
