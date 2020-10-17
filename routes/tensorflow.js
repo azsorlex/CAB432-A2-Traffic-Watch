@@ -11,15 +11,38 @@ const cocoSsd = require('@tensorflow-models/coco-ssd');
 const image = require('get-image-data');
 aws.config.loadFromPath('./config.json');
 const Redis=require('ioredis');
+const { Cluster } = require('ioredis');
 
+const s3= new aws.S3({apiVersion: '2006-03-01'});
 const model = cocoSsd.load(); // Pre-load the model for all instances
 const { QLDTRAFFIC_GEOJSON_API_KEY } = process.env;
 let refreshJobs = [];
 //Setup S3 bucket storage
 const bucketName ='alex-ethan-a2-s3';
-const cacheName='alex-ethan-a2-cache';
-const redis_address='alex-ethan-a2-cache.km2jzi.ng.0001.apse2.cache.amazonaws.com:6379';
-const redis=new Redis(redis_address);
+//onst cacheName='alex-ethan-a2-cache';
+const nodes=[
+'alex-ethan-a2-cache.km2jzi.clustercfg.apse2.cache.amazonaws.com:6379'
+]
+const options={
+  slotsRefreshTimeout:2000,
+  scaleReads:'slave',
+  dnsLookup : (address,callback) => callback(null,address),
+  redisOptions:{
+    tls:{}
+  }
+}
+
+//const redis=new Redis.Cluster(nodes,options);
+const redis= new Redis(6379,'alex-ethan-a2-cache.km2jzi.clustercfg.apse2.cache.amazonaws.com');
+console.log('here');
+redis.set('as','ti');
+redis.get('as',function(err,res){
+  console.log(res);
+  if(err){
+    console.log(err);
+  }
+  redis.disconnect;
+});
 
 crontab.scheduleJob("59 6 * * *", () => { // Create a job that runs at 6:59am that queries the QLDTraffic API and creates a new cron job for every camera returned
   refreshJobs.forEach(job => { // Delete the stored job(s)
@@ -65,6 +88,7 @@ crontab.scheduleJob("59 6 * * *", () => { // Create a job that runs at 6:59am th
                 }
                 //pull the total count from s3 add to it and post both the minute count and the total count
                 //pull the hour count from cache and add
+                console.log(`\n\nStoring data in cache ${cam.properties.id} and frame: ${frameCount}`);
                 storeCamData(cam.properties.id,frameCount);
                 //let returnJson={boxes:predictionResult,dayCount:counts.dayCount,hourCount:counts.hourCount}
                 //res.json(returnJson)
@@ -88,13 +112,8 @@ router.get('/getpredictions/:id', function (req, res, next) {
     if(result){
       //cache contains data
       let hourArray=result.hourArray;
-      hourArray[hourArray.length]=frameCount;//add the frame count to the hours array
-      let totalCount=reult.dayCount+frameCount;
-      data={dayCount:totalCount,hourArray:hourArray};
-      redis.del(camId);//delete the data
-      redis.set(camId,data);
       let hourCount= hourArray.reduce((a,b)=>a+b,0); //sum the current hour
-      let returnObj={dayCount:totalCount, hourCount:hourCount};
+      let returnObj={dayCount:result.dayCount, hourCount:hourCount};
       res.json(returnObj);
     }}).catch(console.log(err));
 });
@@ -102,7 +121,26 @@ router.get('/getpredictions/:id', function (req, res, next) {
 /* Query S3 and ElastiCache to retrieve the graph data and total vehicle count (which is graph data plus current vehicle count) */
 router.get('/getgraph/:id', function (req, res, next) {
   const { id } = req.params;
-  res.json([{}]); // Just a blank response. Update this
+  //get the current hours data
+  redis.get(id,function(err,result){
+    if(result){
+      //cache contains data
+      let hourArray=result.hourArray;
+      //get the Total Day count
+      const params = {Bucket: bucketName, Key: id};
+      //check the bucket
+      s3.getObject(params, (err,s3Result) => {
+      if(s3Result) {  
+        const resultJSON = JSON.parse(s3Result.Body);        
+        const dayArray=resultJSON.dayArray;
+        let returnObj={dayArray:dayArray, hourArray:hourArray};
+        res.json(returnObj);
+      } 
+      else{
+        console.log(err);
+      }});  
+      
+    }}).catch(console.log(err));
 });
 
 //store data in the cache every minute
@@ -110,14 +148,14 @@ function storeCamData(camId,frameCount){
 //set up a cache
   redis.get({key:camId,function(err,result){
     if(result){
+      console.log('\n\neceived REDIS DATA')
       //cache contains data
       let hourArray=result.hourArray;
       hourArray[hourArray.length]=frameCount;//add the frame count to the hours array
-      let totalCount=reult.dayCount+frameCount;
+      let totalCount=result.dayCount+frameCount;
       data={dayCount:totalCount,hourArray:hourArray};
       redis.del(camId);//delete the data
       redis.set(camId,data);
-      //let returnObj={dayCount:totalCount, hourCount:hourCount};
     }
     else{
       //cache does not contain data
@@ -132,10 +170,9 @@ function storeCamData(camId,frameCount){
 //add the hours array to the s3 data and update s3
 //clear the cache keeping only the days total count
 function S3StorageHour(id){
-  const s3Key=id;
-  const params = {Bucket: bucketName, Key: s3Key};
+  const params = {Bucket: bucketName, Key: id};
   //check the bucket
-  const s3= new AWS.S3({apiVersion: '2006-03-01'});
+  
   s3.getObject(params, (err,s3Result) => {
       if(s3Result) {         
           //camId exists
@@ -176,7 +213,7 @@ function S3StorageNewDay(URL,camId){
   const dayArray=[];// empty array that will be populated with each hour array
   const body = JSON.stringify({camURL:URL, dayArray:dayArray});
   const objectParams = {Bucket: bucketName, Key: s3Key, Body: body};
-  const uploadPromise = new AWS.S3({apiVersion: '2006-03-01'}).putObject(objectParams).promise();
+  const uploadPromise = s3.putObject(objectParams).promise();
   uploadPromise.then(function(data){
       console.log("Successfully uploaded data to " + bucketName + "/"+s3Key);
   });
