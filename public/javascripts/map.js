@@ -2,15 +2,9 @@ let currentInfoWindow;
 
 function initMap() {
 
-  let camId=0;
   // Initialise the map
   const map = new google.maps.Map(
     document.getElementById('map'), { zoom: 5, center: { lat: -22, lng: 145 } });
-
-  // Get the data that was passed through from the server
-  let webcamData;
-  fetch('/getwebcamdata')
-    .then(response => webcamData = JSON.parse(response));
 
   // Add a click event to the graph housing element which will hide itself
   const webcamoverlay = document.getElementById("webcamoverlay");
@@ -23,38 +17,40 @@ function initMap() {
     closeCurrentInfoWindow();
   });
 
-  webcamData.forEach(cam => {
-    // Add a marker for the webcam to the map
-    const marker = new google.maps.Marker({
-      map,
-      position: { lat: cam.geometry.coordinates[1], lng: cam.geometry.coordinates[0] },
-      title: cam.properties.description
-    });
+  // Get the data that was passed through from the server
+  fetch('/getwebcamdata')
+    .then((res) => res.json())
+    .then((webcamData) => {
+      webcamData.forEach(cam => {
+        // Add a marker for the webcam to the map
+        const marker = new google.maps.Marker({
+          map,
+          position: { lat: cam.geometry.coordinates[1], lng: cam.geometry.coordinates[0] },
+          title: cam.properties.description
+        });
 
-    // Create an Info Window that appears when the marker is clicked on
-    const infowindow = new google.maps.InfoWindow({
-      content:
-        `<img id="${cam.properties.id}" src="${cam.properties.image_url}" alt="Refreshing"</img>` +
-        `<h2>${cam.properties.description}</h2>` +
-        `<p>Direction: ${cam.properties.direction}</p>` +
-        `<a href=# onclick="javascript:displayGraph('${cam.properties.id}')">View past data</a>`
-    });
+        // Create an Info Window that appears when the marker is clicked on
+        const infowindow = new google.maps.InfoWindow({
+          content:
+            `<img id="${cam.properties.id}" src="${cam.properties.image_url}" alt="Refreshing"</img>` +
+            `<h2>${cam.properties.description}</h2>` +
+            `<p>Direction: ${cam.properties.direction}</p>` +
+            `<a href=# onclick="javascript:displayGraph('${cam.properties.id}')">View past data</a>`
+        });
 
-    // Open the info window when the marker is clicked
-    marker.addListener('click', function () {
-      closeCurrentInfoWindow();
-      currentInfoWindow = infowindow;
-      infowindow.open(map, marker);
+        // Open the info window when the marker is clicked
+        marker.addListener('click', function () {
+          closeCurrentInfoWindow();
+          currentInfoWindow = infowindow;
+          infowindow.open(map, marker);
 
-      // Update the associated image
-      document.getElementById(cam.properties.id).src = cam.properties.image_url // + new Date().getTime();
-      updateImage(cam.properties.id);
+          // Update the associated image
+          //document.getElementById(cam.properties.id).src = cam.properties.image_url // + new Date().getTime();
+          updateImage(cam.properties.id);
+        })
+      });
     })
-    //ensure each camera can be accessed individually via the camId
-    queryTF(cam.properties.image_url,camId) // Get the prediction for the imgae.
-    setInterval(queryTF(cam.properties.image_url,camId), 60000); // Run the above every 60 seconds
-    camId++;
-  });
+    .catch((error) => console.log(error));
 }
 
 function closeCurrentInfoWindow() {
@@ -78,6 +74,9 @@ function displayGraph(id) {
   fetch(`/tensorflow/getgraph/${id}`)
     .then((res) => res.json())
     .then((data) => {
+
+      console.log(data);
+
       const chart = new Chart(ctx, {
         // The type of chart we want to create
         type: 'line',
