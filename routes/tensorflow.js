@@ -10,8 +10,7 @@ const tf = require('@tensorflow/tfjs-node');
 const cocoSsd = require('@tensorflow-models/coco-ssd');
 const image = require('get-image-data');
 aws.config.loadFromPath('./config.json');
-const Redis=require('ioredis');
-const { Cluster } = require('ioredis');
+const Redis=require('redis');
 
 const s3= new aws.S3({apiVersion: '2006-03-01'});
 const model = cocoSsd.load(); // Pre-load the model for all instances
@@ -20,7 +19,7 @@ let refreshJobs = [];
 //Setup S3 bucket storage
 const bucketName ='alex-ethan-a2-s3';
 //onst cacheName='alex-ethan-a2-cache';
-const nodes=[
+/*const nodes=[
 'alex-ethan-a2-cache.km2jzi.clustercfg.apse2.cache.amazonaws.com:6379'
 ]
 const options={
@@ -30,18 +29,32 @@ const options={
   redisOptions:{
     tls:{}
   }
-}
+}*/
+const address='alex-ethan-a2-cache.km2jzi.clustercfg.apse2.cache.amazonaws.com:6379';
 
 //const redis=new Redis.Cluster(nodes,options);
-const redis= new Redis(6379,'alex-ethan-a2-cache.km2jzi.clustercfg.apse2.cache.amazonaws.com');
+//onst redis= new Redis('localhost:3000');
+
+redis = Redis.createClient();   
+/*redis.on('error', (err) =>  { 
+    console.log("Error " + err);  
+});*/
+//const redis= new Redis('127.0.0.1:3000');
+
+/*const redis=new Redis(3000);
+redis.open((err) =>{
+  if(err==null){
+
+  }
+})*/
+
+
 console.log('here');
 redis.set('as','ti');
+console.log('here');
 redis.get('as',function(err,res){
-  console.log(res);
-  if(err){
-    console.log(err);
-  }
-  redis.disconnect;
+  console.log(`Result: ${res}`);
+  console.log(err);
 });
 
 crontab.scheduleJob("59 6 * * *", () => { // Create a job that runs at 6:59am that queries the QLDTraffic API and creates a new cron job for every camera returned
