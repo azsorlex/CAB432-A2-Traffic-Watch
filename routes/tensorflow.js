@@ -24,28 +24,6 @@ const cache = redis.createClient(); // Use this for local development
   host: 'alex-ethan-ass2-cache.km2jzi.ng.0001.apse2.cache.amazonaws.com',
   port: 6379
 });*/
-console.log("after creation");
-
-function getKey(key) {
-  cache.get(key, function (err, res) {
-    if (res) {
-      console.log("success");
-      console.log(`Res: ${res}`);
-    } else {
-      console.log("failure. creating new element");
-      cache.set(key, 'bar', function (e, r) {
-        console.log("redis.set", r);
-      });
-      getKey(key);
-    }
-  });
-}
-
-console.log("before .on(connect)");
-cache.on("connect", () => {
-  console.log("Redis online. Now testing...");
-  //getKey('foo');
-});
 
 crontab.scheduleJob("59 6 * * *", () => { // Create a job that runs at 6:59am that queries the QLDTraffic API and creates a new cron job for every camera returned
   cronJobs.forEach(job => { // Delete the stored job(s)
