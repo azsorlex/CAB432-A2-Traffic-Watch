@@ -35,6 +35,7 @@ crontab.scheduleJob("59 6 * * *", () => { // Create a job that runs at 6:59am th
 
       s3.putObject({ Bucket: bucketName, Key: "QLDTrafficResults", Body: JSON.stringify(response.data.features) }).promise() //update the S3 camera data
         .then(() => {
+          cache.del("QLDTrafficResults");
           console.log(`Successfully updated the QLDTraffic results.`);
         })
         .catch((error) => console.log(error));
