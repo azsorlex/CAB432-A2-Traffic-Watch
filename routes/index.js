@@ -61,26 +61,8 @@ router.get('/getcounts/:id', function (req, res, next) {
         } else {
           counts.push("0");
         }
-        cache.get(`${id}:PredictionBoxes`, function (e2, r3) {
-          let boxes=[];
-          if (r3) {
-            let all=r3.split(',');
-            let row=[];
-            all.forEach(element => {
-              if(row.length<4){
-                row.push(element);
-              }
-              else{
-                boxes.push(row);
-                row=[];
-                row.push(element);
-              }
-            })
-
-          } else {
-            boxes.push("0");
-          }
-          res.json({counts:counts,boxes:[100,100,100,100]});
+        cache.get(`${id}:PredictionBoxes`, function (e3, r3) {
+          res.json({ counts: counts, boxes: JSON.parse(r3) });
           cache.quit();
         });
       });

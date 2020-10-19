@@ -119,6 +119,8 @@ router.get('/refreshpredictions/:id/:url', function (req, res, next) {
           }
         });
 
+        cache.set(`${id}:PredictionBoxes`, JSON.stringify(predictionBoxes), 'EX', 180);
+
         // Update the current count by adding what was currently detected on top of the current total
         cache.get(`${id}:CurrentCount`, function (err, response) {
           let value;
@@ -141,11 +143,6 @@ router.get('/refreshpredictions/:id/:url', function (req, res, next) {
             res.status(200).send();
           });
         });
-
-        cache.set(`${id}:PredictionBoxes`, predictionBoxes.toString(), function (e, r) {
-          res.status(200).send();
-        });
-
       })
       .catch(error => console.log(error));
   });
