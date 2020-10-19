@@ -111,9 +111,11 @@ router.get('/refreshpredictions/:id/:url', function (req, res, next) {
       .then(predictions => {
         // Only filer out "car" predictions
         let finalPredictions = [];
+        let predictionBoxes=[];
         predictions.forEach(prediction => {
           if (prediction.class === "car") {
             finalPredictions.push(prediction);
+            predictionBoxes.push(prediction.bbox);
           }
         });
 
@@ -139,6 +141,11 @@ router.get('/refreshpredictions/:id/:url', function (req, res, next) {
             res.status(200).send();
           });
         });
+
+        cache.set(`${id}:PredictionBoxes`, predictionBoxes.toString(), function (e, r) {
+          res.status(200).send();
+        });
+
       })
       .catch(error => console.log(error));
   });

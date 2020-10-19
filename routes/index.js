@@ -48,20 +48,41 @@ router.get('/getcounts/:id', function (req, res, next) {
 
   cache.on("connect", () => {
     cache.get(`${id}:CurrentCount`, function (e1, r1) {
-      let result = [];
+      let result = {};
+      let counts=[];
       if (r1) {
-        result.push(r1);
+        counts.push(r1);
       } else {
-        result.push("0");
+        counts.push("0");
       }
       cache.get(`${id}:DayCount`, function (e2, r2) {
         if (r2) {
-          result.push(r2);
+          counts.push(r2);
         } else {
-          result.push("0");
+          counts.push("0");
         }
-        res.json(result);
-        cache.quit();
+        cache.get(`${id}:PredictionBoxes`, function (e2, r3) {
+          let boxes=[];
+          if (r3) {
+            let all=r3.split(',');
+            let row=[];
+            all.forEach(element => {
+              if(row.length<4){
+                row.push(element);
+              }
+              else{
+                boxes.push(row);
+                row=[];
+                row.push(element);
+              }
+            })
+
+          } else {
+            boxes.push("0");
+          }
+          res.json({counts:counts,boxes:[100,100,100,100]});
+          cache.quit();
+        });
       });
     });
   });
