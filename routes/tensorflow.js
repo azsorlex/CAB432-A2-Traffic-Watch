@@ -41,11 +41,17 @@ crontab.scheduleJob("59 6 * * *", () => { // Create a job that runs at 6:59am th
         .catch((error) => console.log(error));
 
       response.data.features.forEach(cam => {
+        // Just runs the refreshpredictions command at 7, instead of also writing results to S3
+        const oneTimeRefreshJob = crontab.scheduleJob("0 7 * * *", () => {
+          axios.get(`${ip}/tensorflow/refreshpredictions/${cam.properties.id}/${cam.properties.image_url.replace(/\//g, '$')}`)
+            .then(() => crontab.cancelJob(oneTimeRefreshJob));
+        });
+
         const refreshJob = crontab.scheduleJob("1-59 7-21 * * *", () => { // Fetch predictions for the image and store it to cache (almost) every minute
           axios.get(`${ip}/tensorflow/refreshpredictions/${cam.properties.id}/${cam.properties.image_url.replace(/\//g, '$')}`);
         });
 
-        const hourlyJob = crontab.scheduleJob("0 7-22 * * *", () => {
+        const hourlyJob = crontab.scheduleJob("0 8-22 * * *", () => {
           // Run the refresh job first, and then once that's done, run the hourly job. This prevents any write conflicts
           axios.get(`${ip}/tensorflow/refreshpredictions/${cam.properties.id}/${cam.properties.image_url.replace(/\//g, '$')}`)
             .then(() => { // Get the current count, add it to the hourly counts, then reset it
