@@ -13,17 +13,16 @@ const redis = require('redis');
 AWS.config.loadFromPath('./config.json');
 
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
-const model = cocoSsd.load(); // Pre-load the model for all instances
+const bucketName = 'alex-ethan-a2-s3';
+const model = cocoSsd.load(); // Pre-load the model
 const { QLDTRAFFIC_GEOJSON_API_KEY } = process.env;
 let cronJobs = [];
-//Setup S3 bucket storage
-const bucketName = 'alex-ethan-a2-s3';
+
+const ip = "http://localhost:3000"; // Use this for local development 
+//const ip = "";
 
 const cache = redis.createClient(); // Use this for local development
-/*const cache = redis.createClient({
-  host: 'alex-ethan-ass2-cache.km2jzi.ng.0001.apse2.cache.amazonaws.com',
-  port: 6379
-});*/
+//const cache = redis.createClient({ host: 'alex-ethan-ass2-cache.km2jzi.ng.0001.apse2.cache.amazonaws.com', port: 6379 });
 
 crontab.scheduleJob("59 6 * * *", () => { // Create a job that runs at 6:59am that queries the QLDTraffic API and creates a new cron job for every camera returned
   cronJobs.forEach(job => { // Delete the stored job(s)
@@ -34,138 +33,138 @@ crontab.scheduleJob("59 6 * * *", () => { // Create a job that runs at 6:59am th
   axios.get(`https://api.qldtraffic.qld.gov.au/v1/webcams?apikey=${QLDTRAFFIC_GEOJSON_API_KEY}`)
     .then((response) => {
 
-      const uploadPromise = s3.putObject({ Bucket: bucketName, Key: "QLDTrafficResults", Body: JSON.stringify(response.data.features) }).promise(); //update the S3 camera data
-      uploadPromise.then((data) => {
-        console.log(`Successfully uploaded QLDTrafficResults to ${bucketName}`);
-      });
+      s3.putObject({ Bucket: bucketName, Key: "QLDTrafficResults", Body: JSON.stringify(response.data.features) }).promise() //update the S3 camera data
+        .then(() => {
+          console.log(`Successfully updated the QLDTraffic results.`);
+        })
+        .catch((error) => console.log(error));
 
       response.data.features.forEach(cam => {
-        const refreshJob = crontab.scheduleJob("* 7-21 * * *", () => { // Fetch predictions for the image and store it to cache every minute
-          image(cam.properties.image_url, async function (err, image) {
-            const numChannels = 3;
-            const numPixels = image.width * image.height;
-            const values = new Int32Array(numPixels * numChannels);
-            pixels = image.data;
-
-            for (let i = 0; i < numPixels; i++) {
-              for (let channel = 0; channel < numChannels; ++channel) {
-                values[i * numChannels + channel] = pixels[i * 4 + channel];
-              }
-            }
-            const outShape = [image.height, image.width, numChannels];
-            const input = tf.tensor3d(values, outShape, 'int32');
-
-            (await model).detect(input)
-              .then(predictions => {
-                // Only filer out "car" predictions
-                let finalPredictions = [];
-                predictions.forEach(prediction => {
-                  if (prediction.class === "car") {
-                    finalPredictions.push(prediction);
-                  }
-                });
-
-                // Update the current count by adding what was currently detected on top of the current total
-                let key = `${cam.properties.id}:CurrentCount`;
-                cache.get(key, function (err, res) {
-                  let value;
-                  if (res) {
-                    value = parseInt(res) + finalPredictions.length;
-                  } else {
-                    value = finalPredictions.length;
-                  }
-                  cache.set(key, value.toString());
-                });
-
-                // Update the day count
-                key = `${cam.properties.id}:DayCount`;
-                cache.get(key, function (err, res) {
-                  let value;
-                  if (res) {
-                    value = parseInt(res) + finalPredictions.length;
-                  } else {
-                    value = finalPredictions.length;
-                  }
-                  cache.set(key, value.toString());
-                });
-              })
-
-              .catch(error => {
-                console.log(error);
-              });
-          });
+        const refreshJob = crontab.scheduleJob("1-59 7-21 * * *", () => { // Fetch predictions for the image and store it to cache (almost) every minute
+          axios.get(`${ip}/tensorflow/refreshpredictions/${cam.properties.id}/${cam.properties.image_url.replace(/\//g, '$')}`);
         });
 
-        const hourlyJob = crontab.scheduleJob("0 8-22 * * *", () => { // Get the current count, add it to the hourly counts, then reset it
-          const cacheKey = `${cam.properties.id}:CurrentCount`;
-          const s3Key = `${cam.properties.id}:HourlyCounts`;
-          const params = { Bucket: bucketName, Key: s3Key };
-
-          s3.getObject(params, (err, s3Result) => {
-            let hourlyCounts;
-            if (s3Result) { // Add the current count from cache into the existing array
-              hourlyCounts = s3Result.Body;
-              cache.get(cacheKey, function (e, result) { // Get the hourly count from cache
-                hourlyCounts.push(parseInt(result));
-              });
-            } else { // Otherwise create a new one
-              cache.get(cacheKey, function (e, result) { // Get the hourly count from cache
-                hourlyCounts = [parseInt(result)];
-              });
-            }
-
-            const objectParams = { Bucket: s3Result.Bucket, Key: s3Key, Body: JSON.stringify(hourlyCounts) };
-            const uploadPromise = s3.putObject(objectParams).promise(); //update the s3 camera data
-            uploadPromise.then((data) => {
-              console.log(`Successfully uploaded ${s3Key} to ${bucketName}`);
+        const hourlyJob = crontab.scheduleJob("0 7-22 * * *", () => {
+          // Run the refresh job first, and then once that's done, run the hourly job. This prevents any write conflicts
+          axios.get(`${ip}/tensorflow/refreshpredictions/${cam.properties.id}/${cam.properties.image_url.replace(/\//g, '$')}`)
+            .then(() => { // Get the current count, add it to the hourly counts, then reset it
+              axios.get(`${ip}/tensorflow/updatehourlycounts/${cam.properties.id}`);
             });
-
-            cache.del(cacheKey);
-
-          }).catch(console.log(err));
         });
 
         cronJobs.push(refreshJob, hourlyJob);
       });
     });
+
+  const midnightClearing = crontab.scheduleJob("0 0 * * *", () => { // Clear most of the S3 bucket's items at midnight
+    s3.listObjects({ Bucket: bucketName }, function (err, data) {
+      let items = [];
+      data.Contents.forEach(item => {
+        if (item.Key !== "QLDTrafficResults") {
+          items.push({ Key: item.Key });
+        }
+      });
+
+      let params = {
+        Bucket: bucketName,
+        Delete: {
+          Objects: items,
+          Quiet: true
+        }
+      };
+      s3.deleteObjects(params, function (err, data) {
+        console.log("S3 successfully cleared.");
+      });
+    });
+  });
+
+  cronJobs.push(midnightClearing);
 });
 
 /* Refresh the image predictions and then cache the number of cars detected */
 router.get('/refreshpredictions/:id/:url', function (req, res, next) {
   const { id } = req.params;
-  const url = req.params.url;
-  
-  res.status(200).send();
+  const url = req.params.url.replace(/\$/g, '/');
+
+  image(url, async function (err, image) {
+    const numChannels = 3;
+    const numPixels = image.width * image.height;
+    const values = new Int32Array(numPixels * numChannels);
+    pixels = image.data;
+
+    for (let i = 0; i < numPixels; i++) {
+      for (let channel = 0; channel < numChannels; ++channel) {
+        values[i * numChannels + channel] = pixels[i * 4 + channel];
+      }
+    }
+    const outShape = [image.height, image.width, numChannels];
+    const input = tf.tensor3d(values, outShape, 'int32');
+
+    (await model).detect(input)
+      .then(predictions => {
+        // Only filer out "car" predictions
+        let finalPredictions = [];
+        predictions.forEach(prediction => {
+          if (prediction.class === "car") {
+            finalPredictions.push(prediction);
+          }
+        });
+
+        // Update the current count by adding what was currently detected on top of the current total
+        cache.get(`${id}:CurrentCount`, function (err, response) {
+          let value;
+          if (response) {
+            value = parseInt(response) + finalPredictions.length;
+          } else {
+            value = finalPredictions.length;
+          }
+          cache.set(`${id}:CurrentCount`, value.toString(), 'EX', 180);
+        });
+
+        cache.get(`${id}:DayCount`, function (err, response) {
+          let value;
+          if (response) {
+            value = parseInt(response) + finalPredictions.length;
+          } else {
+            value = finalPredictions.length;
+          }
+          cache.set(`${id}:DayCount`, value.toString(), 'EX', 2 * 60 * 60, function (e, r) {
+            res.status(200).send();
+          });
+        });
+      })
+      .catch(error => console.log(error));
+  });
 });
 
 /* Get the current count from cache and the count array from S3, append the current one, update the S3 object with the new value, and delete the item from cache */
 router.get('/updatehourlycounts/:id', function (req, res, next) {
   const { id } = req.params;
-  
-  res.status(200).send();
-});
-
-
-/* Query ElastiCache to retrieve latest predictions for the chosen cam */
-router.get('/getpredictions/:id', function (req, res, next) {
-  const { id } = req.params;
-  
-  res.json([{}]);
-});
-
-/* Query S3 and ElastiCache to retrieve the graph data and total vehicle count (which is graph data plus current vehicle count) */
-router.get('/getgraph/:id', function (req, res, next) {
-  const key = `${req.params.id}:HourlyCounts`;
-  const params = { Bucket: bucketName, Key: key };
+  const cacheKey = `${id}:CurrentCount`;
+  const s3Key = `${id}:HourlyCounts`;
+  const params = { Bucket: bucketName, Key: s3Key };
 
   s3.getObject(params, (err, s3Result) => {
-    if (s3Result) { // Get the past hours array for the camera
-      res.json(JSON.parse(s3Result.Body));
-    } else { // Otherwise return a blank array
-      res.json([]);
+    let hourlyCounts;
+    if (s3Result) { // Add the current count from cache into the existing array
+      hourlyCounts = JSON.parse(s3Result.Body);
+    } else {
+      hourlyCounts = [];
     }
 
-  }).catch(console.log(err));
+    cache.get(cacheKey, function (e, result) { // Get the hourly count from cache, then push the results to s3
+      hourlyCounts.push(parseInt(result));
+
+      const objectParams = { Bucket: bucketName, Key: s3Key, Body: JSON.stringify(hourlyCounts) };
+      s3.putObject(objectParams).promise() //update the s3 camera data
+        .then(() => {
+          console.log(`Successfully uploaded ${s3Key} to ${bucketName}`);
+          cache.del(cacheKey);
+          res.status(200).send();
+        })
+        .catch((error) => console.log(error));
+    });
+  });
 });
 
 module.exports = router;

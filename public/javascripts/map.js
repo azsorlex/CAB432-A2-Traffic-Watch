@@ -7,9 +7,9 @@ function initMap() {
     document.getElementById('map'), { zoom: 5, center: { lat: -22, lng: 145 } });
 
   // Add a click event to the graph housing element which will hide itself
-  const webcamoverlay = document.getElementById("webcamoverlay");
-  webcamoverlay.addEventListener('click', function () {
-    webcamoverlay.style.display = "none";
+  const chartoverlay = document.getElementById("chartoverlay");
+  chartoverlay.addEventListener('click', function () {
+    chartoverlay.style.display = "none";
   });
 
   // Close the current info window when the map is clicked
@@ -29,25 +29,27 @@ function initMap() {
           title: cam.properties.description
         });
 
-        // Create an Info Window that appears when the marker is clicked on
-        const infowindow = new google.maps.InfoWindow({
-          content:
-            `<img id="${cam.properties.id}" src="${cam.properties.image_url}" alt="Refreshing"</img>` +
-            `<h2>${cam.properties.description}</h2>` +
-            `<p>Direction: ${cam.properties.direction}</p>` +
-            `<a href=# onclick="javascript:displayGraph('${cam.properties.id}')">View past data</a>`
-        });
-
         // Open the info window when the marker is clicked
         marker.addListener('click', function () {
-          closeCurrentInfoWindow();
-          currentInfoWindow = infowindow;
-          infowindow.open(map, marker);
+          fetch(`/getcounts/${cam.properties.id}`)
+            .then((res) => res.json())
+            .then((data) => {
+              const infowindow = new google.maps.InfoWindow({ // Create an Info Window
+                content:
+                  `<img src="${cam.properties.image_url}#${new Date().getTime()}" alt="Loading"</img>` +
+                  `<h2>${cam.properties.description}</h2>` +
+                  `<p>Direction: ${cam.properties.direction}</p>` +
+                  `<p>Cars detected in the last hour: ${data[0]}</p>` +
+                  `<p>Cars detected throughout the day: ${data[1]}</p>` +
+                  `<a href=# onclick="javascript:displayGraph('${cam.properties.id}')">View past data</a>`
+              });
+              currentInfoWindow = infowindow;
+              infowindow.open(map, marker);
+            })
+            .catch((error) => console.log(error));
 
-          // Update the associated image
-          //document.getElementById(cam.properties.id).src = cam.properties.image_url // + new Date().getTime();
-          updateImage(cam.properties.id);
-        })
+          closeCurrentInfoWindow(); // Close the previous window if there is one
+        });
       });
     })
     .catch((error) => console.log(error));
@@ -59,19 +61,10 @@ function closeCurrentInfoWindow() {
   } catch (e) { }
 }
 
-function updateImage(id) {
-  fetch(`/tensorflow/getpredictions/${id}`)
-    .then((res) => res.json())
-    .then((data) => {
-      console.log(data);
-    })
-    .catch((error) => console.log(error))
-}
-
 // Query the server to get the results for a particular camera, then display them
 function displayGraph(id) {
   const ctx = document.getElementById('mychart').getContext('2d');
-  fetch(`/tensorflow/getgraph/${id}`)
+  fetch(`/getgraph/${id}`)
     .then((res) => res.json())
     .then((data) => {
 
@@ -99,5 +92,5 @@ function displayGraph(id) {
     .catch((error) => console.log(error));
 
   // Show the window where the detailed information will be displayed
-  webcamoverlay.style.display = "flex";
+  chartoverlay.style.display = "flex";
 }
