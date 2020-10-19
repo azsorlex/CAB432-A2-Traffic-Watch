@@ -36,14 +36,30 @@ function initMap() {
             .then((data) => {
               const infowindow = new google.maps.InfoWindow({ // Create an Info Window
                 content:
-                  `<img id="cam" src="${cam.properties.image_url}#${new Date().getTime()}" alt="Loading"</img>` +                  
+                  `<canvas id="camCanvas" width="300", height="500" </canvas>`+
+                  `<img id="cam" src="${cam.properties.image_url}#${new Date().getTime()}" alt="Loading"</img>` +
+                  `<script
+                  let rectangles=${data.boxes}
+                  var c=document.getElementById("camCanvas");
+                  var ctx=c.getContext("2d");
+                  var img=document.getElementById("cam");  
+                  ctx.drawImage(img,10,10);  
+                  var canvas = document.getElementById('camCanvas');
+                  var context = canvas.getContext('2d');
+
+                  rectangles.forEach(rectangle =>{
+                    context.beginPath();
+                    context.rect(rectangle[0]+10,rectangle[1]+10,rectangle[2],rectangle[3]);
+                    context.lineWidth = 7;
+                    context.strokeStyle = 'green';
+                    context.stroke();
+                  });
+                  </script>`+         
                   `<h2>${cam.properties.description}</h2>` +
                   `<p>Direction: ${cam.properties.direction}</p>` +
                   `<p>Cars detected in the last hour: ${data.counts[0]}</p>` +
                   `<p>Cars detected throughout the day: ${data.counts[1]}</p>` + 
-                  `<a href=# onclick="javascript:displayGraph('${cam.properties.id}')">View past data</a>`+
-                  `<canvas id="camCanvas" width="500", height="500" </canvas>`+
-                  `<script> drawRectangles(${data.boxes})`
+                  `<a href=# onclick="javascript:displayGraph('${cam.properties.id}')">View past data</a>`   
               });
               currentInfoWindow = infowindow;
               infowindow.open(map, marker);
@@ -57,23 +73,6 @@ function initMap() {
     .catch((error) => console.log(error));
 }
 
-function drawRectangles(rectangles){
-  var c=document.getElementById("camCanvas");
-  var ctx=c.getContext("2d");
-  var img=document.getElementById("cam");  
-  ctx.drawImage(img);  
-  var canvas = document.getElementById('camCanvas');
-  var context = canvas.getContext('2d');
-
-  rectangles.forEach(rectangle =>{
-    context.beginPath();
-    context.rect(rectangle[0],rectangle[1],rectangle[2],rectangle[3]);
-    context.lineWidth = 7;
-    context.strokeStyle = 'green';
-    context.stroke();
-  });
-  
-}
 
 function closeCurrentInfoWindow() {
   try {
