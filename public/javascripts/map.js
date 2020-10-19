@@ -31,7 +31,7 @@ function initMap() {
 
         // Open the info window when the marker is clicked
         marker.addListener('click', function () {
-          fetch(`/getcounts/${cam.properties.id}`)
+          fetch(`/getcountsandboxes/${cam.properties.id}`)
             .then((res) => res.json())
             .then((data) => {
               const infowindow = new google.maps.InfoWindow({ // Create an Info Window

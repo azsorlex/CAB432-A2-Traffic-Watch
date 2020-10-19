@@ -41,7 +41,7 @@ router.get('/getwebcamdata', function (req, res, next) {
 });
 
 /* Query ElastiCache to retrieve the current and day counts for the chosen cam */
-router.get('/getcounts/:id', function (req, res, next) {
+router.get('/getcountsandboxes/:id', function (req, res, next) {
   const { id } = req.params;
   const cache = redis.createClient(); // Use this for local development
   //const cache = redis.createClient({ host: 'alex-ethan-ass2-cache.km2jzi.ng.0001.apse2.cache.amazonaws.com', port: 6379 });
