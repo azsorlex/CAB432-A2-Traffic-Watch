@@ -5,7 +5,7 @@ A NodeJS application written by Alexander Rozsa and Ethan Knight which uses Tens
 The Google Maps Javascript and QLDTraffic GeoJSON APIs are used in this application, and their API keys are required for this application to work. Copy ".env.sample", rename it as ".env", and then appropriately add the keys into .env.
 
 # Redis
-Our application uses AWS ElastiCache when deployed onto AWS, which doesn't work when running this application locally. Line 23 of tensorflow.js can be replaced with line 22 to utilise a local Redis installation.
+Our application uses AWS ElastiCache when deployed onto AWS, which doesn't work when running this application locally. By default, our application utilises a local Redis installation, and the Dockerfile has some code that automatically comments out the code for the local instance and uncomments code for running on AWS.
 
 # Usage
 After running ```npm start```, the application can be accessed at ```localhost:3000```. 

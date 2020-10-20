@@ -110,11 +110,9 @@ router.get('/refreshpredictions/:id/:url', function (req, res, next) {
     (await model).detect(input)
       .then(predictions => {
         // Only filer out "car" predictions
-        let finalPredictions = [];
         let predictionBoxes=[];
         predictions.forEach(prediction => {
           if (prediction.class === "car") {
-            finalPredictions.push(prediction);
             predictionBoxes.push(prediction.bbox);
           }
         });
@@ -125,9 +123,9 @@ router.get('/refreshpredictions/:id/:url', function (req, res, next) {
         cache.get(`${id}:CurrentCount`, function (err, response) {
           let value;
           if (response) {
-            value = parseInt(response) + finalPredictions.length;
+            value = parseInt(response) + predictionBoxes.length;
           } else {
-            value = finalPredictions.length;
+            value = predictionBoxes.length;
           }
           cache.set(`${id}:CurrentCount`, value.toString(), 'EX', 180);
         });
@@ -135,9 +133,9 @@ router.get('/refreshpredictions/:id/:url', function (req, res, next) {
         cache.get(`${id}:DayCount`, function (err, response) {
           let value;
           if (response) {
-            value = parseInt(response) + finalPredictions.length;
+            value = parseInt(response) + predictionBoxes.length;
           } else {
-            value = finalPredictions.length;
+            value = predictionBoxes.length;
           }
           cache.set(`${id}:DayCount`, value.toString(), 'EX', 2 * 60 * 60, function (e, r) {
             res.status(200).send();
