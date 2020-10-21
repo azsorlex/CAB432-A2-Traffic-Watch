@@ -29,38 +29,58 @@ function initMap() {
           title: cam.properties.description
         });
 
+        
+
         // Open the info window when the marker is clicked
         marker.addListener('click', function () {
           fetch(`/getcountsandboxes/${cam.properties.id}`)
             .then((res) => res.json())
             .then((data) => {
-              const infowindow = new google.maps.InfoWindow({ // Create an Info Window
-                content:
-                  `<canvas id="camCanvas" width="300", height="500" </canvas>`+
-                  `<img id="cam" src="${cam.properties.image_url}#${new Date().getTime()}" alt="Loading"</img>` +
-                  `<script
-                  let rectangles=${data[2]}
-                  var c=document.getElementById("camCanvas");
-                  var ctx=c.getContext("2d");
-                  var img=document.getElementById("cam");  
-                  ctx.drawImage(img,10,10);  
-                  var canvas = document.getElementById('camCanvas');
-                  var context = canvas.getContext('2d');
+              var contentString=   `<div id="infoDiv">`+
+              `<h2>${cam.properties.description}</h2>` +
+              `<p>Direction: ${cam.properties.direction}</p>` +
+              `<p>Cars detected in the last hour: ${data[0]}</p>` +
+              `<p>Cars detected throughout the day: ${data[1]}</p>` + 
+              `<a href=# onclick="javascript:displayGraph('${cam.properties.id}')">View past data</a>`+
+              `</div>`;
+              
+              const infoWindowNode=document.createElement('div');
+              const canvasNode=document.createElement('div'); 
+              const textnode =document.createElement('div');
+              textnode.innerHTML=contentString;
 
-                  rectangles.forEach(rectangle =>{
-                    context.beginPath();
-                    context.rect(rectangle[0]+10,rectangle[1]+10,rectangle[2],rectangle[3]);
-                    context.lineWidth = 7;
-                    context.strokeStyle = 'green';
-                    context.stroke();
-                  });
-                  </script>`+         
-                  `<h2>${cam.properties.description}</h2>` +
-                  `<p>Direction: ${cam.properties.direction}</p>` +
-                  `<p>Cars detected in the last hour: ${data[0]}</p>` +
-                  `<p>Cars detected throughout the day: ${data[1]}</p>` + 
-                  `<a href=# onclick="javascript:displayGraph('${cam.properties.id}')">View past data</a>`   
-              });
+              const canvas =document.createElement('canvas');
+              canvas.id="canv";
+              const ctx=canvas.getContext('2d');
+
+              const img=new Image();
+              
+              img.onload=function(){
+                canvas.width=this.width+10;
+                canvas.height=this.height+10;
+                
+                ctx.drawImage(this, 10,10);
+                const c=document.getElementById('canv');
+                const context=c.getContext('2d');
+                const rectangles=data[2];
+                
+                rectangles.forEach(rectangle =>{
+                  context.beginPath();
+                  context.rect(rectangle[0],rectangle[1],rectangle[2],rectangle[3]);
+                  context.lineWidth = 10;
+                  context.strokeStyle = 'green';
+                  context.stroke();
+                });
+              }
+            
+              img.src=`${cam.properties.image_url}#${new Date().getTime()}`;
+              canvasNode.appendChild(canvas);
+              infoWindowNode.appendChild(canvasNode);
+              infoWindowNode.appendChild(textnode);
+
+              const infowindow = new google.maps.InfoWindow();
+              infowindow.setContent(infoWindowNode);
+
               currentInfoWindow = infowindow;
               infowindow.open(map, marker);
             })
@@ -68,11 +88,11 @@ function initMap() {
 
           closeCurrentInfoWindow(); // Close the previous window if there is one
         });
+
       });
     })
     .catch((error) => console.log(error));
 }
-
 
 function closeCurrentInfoWindow() {
   try {
