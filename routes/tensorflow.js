@@ -24,8 +24,28 @@ const ip = "http://localhost:3000"; // Use this for local development
 const cache = redis.createClient(); // Use this for local development
 //const cache = redis.createClient(6379, 'alex-ethan-ass2-cache.km2jzi.ng.0001.apse2.cache.amazonaws.com');
 
-crontab.scheduleJob("59 6 * * *", () => { // Create a job that runs at 6:59am that queries the QLDTraffic API and creates a new cron job for every camera returned
-  cronJobs.forEach(job => { // Delete the stored job(s)
+crontab.scheduleJob("0 0 * * *", () => { // Create a job that runs at midnight that queries the QLDTraffic API and creates a new cron job for every camera returned
+  s3.listObjects({ Bucket: bucketName }, function (err, data) {
+    let items = [];
+    data.Contents.forEach(item => {
+      if (item.Key !== "QLDTrafficResults") {
+        items.push({ Key: item.Key });
+      }
+    });
+
+    let params = {
+      Bucket: bucketName,
+      Delete: {
+        Objects: items,
+        Quiet: true
+      }
+    };
+    s3.deleteObjects(params, function (err, data) {
+      console.log("S3 successfully cleared.");
+    });
+  });
+
+  cronJobs.forEach(job => { // Delete the previous job(s)
     crontab.cancelJob(job);
   });
   cronJobs = [];
@@ -62,30 +82,6 @@ crontab.scheduleJob("59 6 * * *", () => { // Create a job that runs at 6:59am th
         cronJobs.push(refreshJob, hourlyJob);
       });
     });
-
-  const midnightClearing = crontab.scheduleJob("0 0 * * *", () => { // Clear most of the S3 bucket's items at midnight
-    s3.listObjects({ Bucket: bucketName }, function (err, data) {
-      let items = [];
-      data.Contents.forEach(item => {
-        if (item.Key !== "QLDTrafficResults") {
-          items.push({ Key: item.Key });
-        }
-      });
-
-      let params = {
-        Bucket: bucketName,
-        Delete: {
-          Objects: items,
-          Quiet: true
-        }
-      };
-      s3.deleteObjects(params, function (err, data) {
-        console.log("S3 successfully cleared.");
-      });
-    });
-  });
-
-  cronJobs.push(midnightClearing);
 });
 
 /* Refresh the image predictions and then cache the number of cars detected */
@@ -110,7 +106,7 @@ router.get('/refreshpredictions/:id/:url', function (req, res, next) {
     (await model).detect(input)
       .then(predictions => {
         // Only filer out "car" predictions
-        let predictionBoxes=[];
+        let predictionBoxes = [];
         predictions.forEach(prediction => {
           if (prediction.class === "car") {
             predictionBoxes.push(prediction.bbox);
