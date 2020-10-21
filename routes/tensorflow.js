@@ -22,7 +22,7 @@ const ip = "http://localhost:3000"; // Use this for local development
 //const ip = "";
 
 const cache = redis.createClient(); // Use this for local development
-//const cache = redis.createClient({ host: 'alex-ethan-ass2-cache.km2jzi.ng.0001.apse2.cache.amazonaws.com', port: 6379 });
+//const cache = redis.createClient(6379, 'alex-ethan-ass2-cache.km2jzi.ng.0001.apse2.cache.amazonaws.com');
 
 crontab.scheduleJob("59 6 * * *", () => { // Create a job that runs at 6:59am that queries the QLDTraffic API and creates a new cron job for every camera returned
   cronJobs.forEach(job => { // Delete the stored job(s)

@@ -15,7 +15,7 @@ router.get('/', function (req, res, next) {
 /* Query S3 to retrieve the QLDTraffic API results */
 router.get('/getwebcamdata', function (req, res, next) {
   const cache = redis.createClient(); // Use this for local development
-  //const cache = redis.createClient({ host: 'alex-ethan-ass2-cache.km2jzi.ng.0001.apse2.cache.amazonaws.com', port: 6379 });
+  //const cache = redis.createClient(6379, 'alex-ethan-ass2-cache.km2jzi.ng.0001.apse2.cache.amazonaws.com');
 
   const key = "QLDTrafficResults";
   cache.on("connect", () => {
@@ -44,28 +44,21 @@ router.get('/getwebcamdata', function (req, res, next) {
 router.get('/getcountsandboxes/:id', function (req, res, next) {
   const { id } = req.params;
   const cache = redis.createClient(); // Use this for local development
-  //const cache = redis.createClient({ host: 'alex-ethan-ass2-cache.km2jzi.ng.0001.apse2.cache.amazonaws.com', port: 6379 });
+  //const cache = redis.createClient(6379, 'alex-ethan-ass2-cache.km2jzi.ng.0001.apse2.cache.amazonaws.com');
 
   cache.on("connect", () => {
-    cache.get(`${id}:CurrentCount`, function (e1, r1) {
-      let result = {};
-      let counts=[];
-      if (r1) {
-        counts.push(r1);
+
+    cache.mget(`${id}:CurrentCount`, `${id}:DayCount`, `${id}:PredictionBoxes`, (err, response) => {
+      if (response[0] !== null) {
+        response[0] = parseInt(response[0]);
+        response[1] = parseInt(response[1]);
+        response[2] = JSON.parse(response[2]);
       } else {
-        counts.push("0");
+        response[0] = response[1] = 0;
+        response[2] = [];
       }
-      cache.get(`${id}:DayCount`, function (e2, r2) {
-        if (r2) {
-          counts.push(r2);
-        } else {
-          counts.push("0");
-        }
-        cache.get(`${id}:PredictionBoxes`, function (e3, r3) {
-          res.json({ counts: counts, boxes: JSON.parse(r3) });
-          cache.quit();
-        });
-      });
+      res.json(response);
+      cache.quit();
     });
   });
 });

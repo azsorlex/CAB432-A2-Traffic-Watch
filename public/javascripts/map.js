@@ -39,7 +39,7 @@ function initMap() {
                   `<canvas id="camCanvas" width="300", height="500" </canvas>`+
                   `<img id="cam" src="${cam.properties.image_url}#${new Date().getTime()}" alt="Loading"</img>` +
                   `<script
-                  let rectangles=${data.boxes}
+                  let rectangles=${data[2]}
                   var c=document.getElementById("camCanvas");
                   var ctx=c.getContext("2d");
                   var img=document.getElementById("cam");  
@@ -57,8 +57,8 @@ function initMap() {
                   </script>`+         
                   `<h2>${cam.properties.description}</h2>` +
                   `<p>Direction: ${cam.properties.direction}</p>` +
-                  `<p>Cars detected in the last hour: ${data.counts[0]}</p>` +
-                  `<p>Cars detected throughout the day: ${data.counts[1]}</p>` + 
+                  `<p>Cars detected in the last hour: ${data[0]}</p>` +
+                  `<p>Cars detected throughout the day: ${data[1]}</p>` + 
                   `<a href=# onclick="javascript:displayGraph('${cam.properties.id}')">View past data</a>`   
               });
               currentInfoWindow = infowindow;
@@ -88,6 +88,14 @@ function displayGraph(id) {
     .then((result) => {
 
       console.log(result);
+
+
+      // An idea for after everything here is working. Should definately see what the outcome with real data is once we deploy
+      /*let labels = [];
+      for (let i = 7; i < result.length + 7; i++) {
+        labels.push(`${i}-${i + 1}`);
+      }*/
+
       
       const chart = new Chart(ctx, {
         // The type of chart we want to create
