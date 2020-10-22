@@ -18,17 +18,21 @@ const model = cocoSsd.load(); // Pre-load the model
 const { QLDTRAFFIC_GEOJSON_API_KEY } = process.env;
 let cronJobs = [];
 
-const ip = "http://localhost:3000"; // Use this for local development 
-//const ip = "";
+// Use this to write the Load Balancer DNS to S3
+//s3.putObject({Bucket: bucketName, Key: "LBDNS", Body: "http://test.com"}).promise().then(() => { console.log("Successfully uploaded LBDNS") });
+
+const ip = "http://localhost:3000"; // Use this for local development
+//let ip; // Get the Load Balancer IP which is stored in S3
+//s3.getObject({ Bucket: bucketName, Key: "LBDNS" }, (err, response) => { ip = response.Body.toString() });
 
 const cache = redis.createClient(); // Use this for local development
-//const cache = redis.createClient(6379, 'alex-ethan-ass2-cache.km2jzi.ng.0001.apse2.cache.amazonaws.com');
+//const cache = redis.createClient(6379, "alex-ethan-ass2-cache.km2jzi.ng.0001.apse2.cache.amazonaws.com");
 
 crontab.scheduleJob("0 0 * * *", () => { // Create a job that runs at midnight that queries the QLDTraffic API and creates a new cron job for every camera returned
   s3.listObjects({ Bucket: bucketName }, function (err, data) {
     let items = [];
     data.Contents.forEach(item => {
-      if (item.Key !== "QLDTrafficResults") {
+      if (item.Key !== "QLDTrafficResults" || item.Key !== "LBDNS") {
         items.push({ Key: item.Key });
       }
     });
