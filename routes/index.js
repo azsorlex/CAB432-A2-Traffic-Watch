@@ -21,14 +21,14 @@ router.get('/getwebcamdata', function (req, res, next) {
   cache.on("connect", () => {
     cache.get(key, function (err, cacheRes) {
       if (cacheRes) { // Return the data from the cache if it's there and update the expiry
-        cache.expire(key, 30 * 60);
+        cache.expire(key, 10 * 60);
         res.json(JSON.parse(cacheRes));
         cache.quit();
 
       } else { // Otherwise fetch it from S3 and add it to the cache
         s3.getObject({ Bucket: bucketName, Key: key }, (err, s3Result) => {
           if (s3Result) {
-            cache.set(key, s3Result.Body, 'EX', 30 * 60);
+            cache.set(key, s3Result.Body, 'EX', 10 * 60);
             res.json(JSON.parse(s3Result.Body));
           } else {
             res.json[{}]; // Just a blank response

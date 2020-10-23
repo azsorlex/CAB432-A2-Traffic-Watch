@@ -67,8 +67,8 @@ function initMap() {
                 rectangles.forEach(rectangle =>{
                   context.beginPath();
                   context.rect(rectangle[0],rectangle[1],rectangle[2],rectangle[3]);
-                  context.lineWidth = 10;
-                  context.strokeStyle = 'green';
+                  context.lineWidth = 3;
+                  context.strokeStyle = 'red';
                   context.stroke();
                 });
               }
