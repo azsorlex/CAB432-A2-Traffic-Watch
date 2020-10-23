@@ -9,7 +9,11 @@ const bucketName = 'alex-ethan-a2-s3';
 
 /* Query the QLDTraffic API and send the results to the client-side */
 router.get('/', function (req, res, next) {
-  res.render('index', { MAPS_JS_API_KEY: process.env.MAPS_JS_API_KEY })
+  res.render('index', { MAPS_JS_API_KEY: process.env.MAPS_JS_API_KEY });
+});
+
+router.get('/statuscheck', function (req, res, next) {
+  res.status(200).send();
 });
 
 /* Query S3 to retrieve the QLDTraffic API results */
