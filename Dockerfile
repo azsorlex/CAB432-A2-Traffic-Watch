@@ -12,5 +12,6 @@ RUN sed -i '46s/^  /  \/\//;47s/^  ../  /' index.js
 WORKDIR /src
 RUN npm i
 
+ENV TZ="Australia/Brisbane"
 EXPOSE 3000
 CMD ["npm", "start"]
