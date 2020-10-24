@@ -7,7 +7,7 @@ WORKDIR /src/routes
 RUN sed -i '24s/^/\/\//;25s/^..//;26s/^..//' tensorflow.js
 RUN sed -i '28s/^/\/\//;29s/^..//' tensorflow.js
 RUN sed -i '21s/^  /  \/\//;22s/^  ../  /' index.js
-RUN sed -i '51s/^  /  \/\//;52s/^  ../  /' index.js
+RUN sed -i '50s/^  /  \/\//;51s/^  ../  /' index.js
 
 WORKDIR /src
 RUN npm i
