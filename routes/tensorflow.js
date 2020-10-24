@@ -15,80 +15,9 @@ AWS.config.loadFromPath('./config.json');
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 const bucketName = 'alex-ethan-a2-s3';
 const model = cocoSsd.load(); // Pre-load the model
-const { QLDTRAFFIC_GEOJSON_API_KEY } = process.env;
-let cronJobs = [];
-
-// Use this to write the Load Balancer DNS to S3. MAKE SURE http:// IS PREFIXING IT
-//s3.putObject({Bucket: bucketName, Key: "LBDNS", Body: "http://n9992529-test-LB-1028741701.ap-southeast-2.elb.amazonaws.com"}).promise().then(() => { console.log("Successfully uploaded LBDNS") });
-
-const ip = "http://localhost:3000"; // Use this for local development
-//let ip; // Get the Load Balancer IP which is stored in S3
-//s3.getObject({ Bucket: bucketName, Key: "LBDNS" }, (err, response) => { ip = response.Body.toString() });
 
 const cache = redis.createClient(); // Use this for local development
 //const cache = redis.createClient(6379, "alex-ethan-ass2-cache.km2jzi.ng.0001.apse2.cache.amazonaws.com");
-
-crontab.scheduleJob("0 16 * * *", () => { // Create a job that runs at midnight that queries the QLDTraffic API and creates a new cron job for every camera returned
-  s3.listObjects({ Bucket: bucketName }, function (err, data) {
-    let items = [];
-    data.Contents.forEach(item => {
-      if (item.Key !== "QLDTrafficResults" && item.Key !== "LBDNS") {
-        items.push({ Key: item.Key });
-      }
-    });
-
-    let params = {
-      Bucket: bucketName,
-      Delete: {
-        Objects: items,
-        Quiet: true
-      }
-    };
-    s3.deleteObjects(params, function (err, data) {
-      console.log("S3 successfully cleared.");
-    });
-  });
-
-  cronJobs.forEach(job => { // Delete the previous job(s)
-    crontab.cancelJob(job);
-  });
-  cronJobs = [];
-
-  axios.get(`https://api.qldtraffic.qld.gov.au/v1/webcams?apikey=${QLDTRAFFIC_GEOJSON_API_KEY}`)
-    .then((response) => {
-
-      s3.putObject({ Bucket: bucketName, Key: "QLDTrafficResults", Body: JSON.stringify(response.data.features) }).promise() //update the S3 camera data
-        .then(() => {
-          cache.del("QLDTrafficResults");
-          console.log(`Successfully updated the QLDTraffic results.`);
-        })
-        .catch((error) => console.log(error));
-
-      response.data.features.forEach(cam => {
-        // Just runs the refreshpredictions command at 7, instead of also writing results to S3
-        const oneTimeRefreshJob = crontab.scheduleJob("0 7 * * *", () => {
-          axios.get(`${ip}/tensorflow/refreshpredictions/${cam.properties.id}/${cam.properties.image_url.replace(/\//g, '$')}`)
-            .then(() => crontab.cancelJob(oneTimeRefreshJob))
-            .catch((error) => console.log(error));
-        });
-
-        const refreshJob = crontab.scheduleJob("1-59 7-21 * * *", () => { // Fetch predictions for the image and store it to cache (almost) every minute
-          axios.get(`${ip}/tensorflow/refreshpredictions/${cam.properties.id}/${cam.properties.image_url.replace(/\//g, '$')}`)
-            .catch((error) => console.log(error));
-        });
-
-        const hourlyJob = crontab.scheduleJob("0 8-22 * * *", () => {
-          // Run the refresh job first, and then once that's done, run the hourly job. This prevents any write conflicts
-          axios.get(`${ip}/tensorflow/refreshpredictions/${cam.properties.id}/${cam.properties.image_url.replace(/\//g, '$')}`)
-            .then(() => { // Get the current count, add it to the hourly counts, then reset it
-              axios.get(`${ip}/tensorflow/updatehourlycounts/${cam.properties.id}`);
-            }).catch((error) => console.log(error));
-        });
-
-        cronJobs.push(refreshJob, hourlyJob);
-      });
-    });
-});
 
 /* Refresh the image predictions and then cache the number of cars detected */
 router.get('/refreshpredictions/:id/:url', function (req, res, next) {
