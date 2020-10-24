@@ -19,7 +19,7 @@ const { QLDTRAFFIC_GEOJSON_API_KEY } = process.env;
 let cronJobs = [];
 
 // Use this to write the Load Balancer DNS to S3. MAKE SURE http:// IS PREFIXING IT
-//s3.putObject({Bucket: bucketName, Key: "LBDNS", Body: "http://ec2-3-104-223-117.ap-southeast-2.compute.amazonaws.com"}).promise().then(() => { console.log("Successfully uploaded LBDNS") });
+//s3.putObject({Bucket: bucketName, Key: "LBDNS", Body: "http://n9992529-test-LB-1028741701.ap-southeast-2.elb.amazonaws.com"}).promise().then(() => { console.log("Successfully uploaded LBDNS") });
 
 const ip = "http://localhost:3000"; // Use this for local development
 //let ip; // Get the Load Balancer IP which is stored in S3
@@ -28,7 +28,7 @@ const ip = "http://localhost:3000"; // Use this for local development
 const cache = redis.createClient(); // Use this for local development
 //const cache = redis.createClient(6379, "alex-ethan-ass2-cache.km2jzi.ng.0001.apse2.cache.amazonaws.com");
 
-crontab.scheduleJob("0 12 * * *", () => { // Create a job that runs at midnight that queries the QLDTraffic API and creates a new cron job for every camera returned
+crontab.scheduleJob("30 15 * * *", () => { // Create a job that runs at midnight that queries the QLDTraffic API and creates a new cron job for every camera returned
   s3.listObjects({ Bucket: bucketName }, function (err, data) {
     let items = [];
     data.Contents.forEach(item => {
@@ -68,11 +68,13 @@ crontab.scheduleJob("0 12 * * *", () => { // Create a job that runs at midnight 
         // Just runs the refreshpredictions command at 7, instead of also writing results to S3
         const oneTimeRefreshJob = crontab.scheduleJob("0 7 * * *", () => {
           axios.get(`${ip}/tensorflow/refreshpredictions/${cam.properties.id}/${cam.properties.image_url.replace(/\//g, '$')}`)
-            .then(() => crontab.cancelJob(oneTimeRefreshJob));
+            .then(() => crontab.cancelJob(oneTimeRefreshJob))
+            .catch((error) => console.log(error));
         });
 
         const refreshJob = crontab.scheduleJob("1-59 7-21 * * *", () => { // Fetch predictions for the image and store it to cache (almost) every minute
-          axios.get(`${ip}/tensorflow/refreshpredictions/${cam.properties.id}/${cam.properties.image_url.replace(/\//g, '$')}`);
+          axios.get(`${ip}/tensorflow/refreshpredictions/${cam.properties.id}/${cam.properties.image_url.replace(/\//g, '$')}`)
+            .catch((error) => console.log(error));
         });
 
         const hourlyJob = crontab.scheduleJob("0 8-22 * * *", () => {
@@ -80,7 +82,7 @@ crontab.scheduleJob("0 12 * * *", () => { // Create a job that runs at midnight 
           axios.get(`${ip}/tensorflow/refreshpredictions/${cam.properties.id}/${cam.properties.image_url.replace(/\//g, '$')}`)
             .then(() => { // Get the current count, add it to the hourly counts, then reset it
               axios.get(`${ip}/tensorflow/updatehourlycounts/${cam.properties.id}`);
-            });
+            }).catch((error) => console.log(error));
         });
 
         cronJobs.push(refreshJob, hourlyJob);
