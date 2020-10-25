@@ -13,7 +13,7 @@ let request_call = new Promise((resolve, reject) => {
             try {
                 const parsedData = JSON.parse(rawData);
                 console.log(parsedData);
-                resolve(JSON.stringify([parsedData.features[42]])); // Only fetch one particular camera since I couldn't get the other two Lambda functions to process all of them
+                resolve(JSON.stringify(parsedData.features)); // Only fetch one particular camera since I couldn't get the other two Lambda functions to process all of them
             }
             catch (e) {
                 reject(e);
