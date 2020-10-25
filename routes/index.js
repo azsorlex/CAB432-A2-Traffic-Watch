@@ -16,19 +16,6 @@ router.get('/statuscheck', function (req, res, next) {
   res.status(200).send();
 });
 
-router.get('/refreshapiresults', function (req, res, next) {
-  const { QLDTRAFFIC_GEOJSON_API_KEY } = process.env;
-  axios.get(`https://api.qldtraffic.qld.gov.au/v1/webcams?apikey=${QLDTRAFFIC_GEOJSON_API_KEY}`)
-    .then((response) => {
-      s3.putObject({ Bucket: bucketName, Key: "QLDTrafficResults", Body: JSON.stringify(response.data.features) }).promise() //update the S3 camera data
-        .then(() => {
-          cache.del("QLDTrafficResults");
-          console.log(`Successfully updated the QLDTraffic results.`);
-          res.status(200).send()
-        });
-    }).catch((error) => res.status(400).send());
-});
-
 /* Query S3 to retrieve the QLDTraffic API results */
 router.get('/getwebcamdata', function (req, res, next) {
   const cache = redis.createClient(); // Use this for local development

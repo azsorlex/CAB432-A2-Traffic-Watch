@@ -1,8 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const axios = require('axios');
 const AWS = require('aws-sdk');
-let crontab = require('node-crontab');
 require('dotenv').config();
 
 require('@tensorflow/tfjs-backend-cpu');
@@ -21,6 +19,7 @@ const cache = redis.createClient(); // Use this for local development
 
 /* Refresh the image predictions and then cache the number of cars detected */
 router.get('/refreshpredictions/:id/:url', function (req, res, next) {
+  res.status(200).send();
   try {
     const { id } = req.params;
     const url = req.params.url.replace(/\$/g, '/');
@@ -69,15 +68,12 @@ router.get('/refreshpredictions/:id/:url', function (req, res, next) {
             } else {
               value = predictionBoxes.length;
             }
-            cache.set(`${id}:DayCount`, value.toString(), 'EX', 2 * 60 * 60, function (e, r) {
-              res.status(200).send();
-            });
+            cache.set(`${id}:DayCount`, value.toString(), 'EX', 2 * 60 * 60);
           });
         });
     });
   } catch (error) {
     console.log(error);
-    res.status(400).send();
   }
 });
 
@@ -88,6 +84,7 @@ router.get('/updatehourlycounts/:id', function (req, res, next) {
   const s3Key = `${id}:HourlyCounts`;
   const params = { Bucket: bucketName, Key: s3Key };
 
+  res.status(200).send();
   s3.getObject(params, (err, s3Result) => {
     let hourlyCounts;
     if (s3Result) { // Add the current count from cache into the existing array
@@ -104,7 +101,6 @@ router.get('/updatehourlycounts/:id', function (req, res, next) {
         .then(() => {
           console.log(`Successfully uploaded ${s3Key} to ${bucketName}`);
           cache.del(cacheKey);
-          res.status(200).send();
         })
         .catch((error) => console.log(error));
     });
