@@ -9,11 +9,16 @@ exports.handler = async(event) => {
     const apiResults = JSON.parse(data.Body);
     const ip = "http://Alex-Ethan-A2-1766300438.ap-southeast-2.elb.amazonaws.com";
     let promises = apiResults.map(item => {
-        http.get(`${ip}/tensorflow/updatehourlycounts/${item.id}`, (res) => {
-            res.on('end', () => {
-                console.log('success');
+        return new Promise((resolve, reject) => {
+            http.get(`${ip}/tensorflow/updatehourlycounts/${item.properties.id}`, (res) => {
+                res.on('end', () => {
+                    resolve('success');
+                });
+                res.on('error', () => {
+                    reject('error');
+                });
             });
-        })
+        });
     });
 
     await Promise.all(promises);

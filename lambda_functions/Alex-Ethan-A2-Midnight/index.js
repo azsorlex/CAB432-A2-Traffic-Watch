@@ -13,7 +13,7 @@ let request_call = new Promise((resolve, reject) => {
             try {
                 const parsedData = JSON.parse(rawData);
                 console.log(parsedData);
-                resolve(JSON.stringify(parsedData.features)); // Only fetch one particular camera since I couldn't get the other two Lambda functions to process all of them
+                resolve(JSON.stringify(parsedData.features));
             }
             catch (e) {
                 reject(e);
@@ -32,7 +32,7 @@ exports.handler = async(event) => {
 
     let items = [];
 
-    // Mark each item for deletion unless they are two specific keys
+    // Mark each item for deletion unless it is a specific key
     data.Contents.forEach(item => {
         if (item.Key !== "QLDTrafficResults") {
             items.push({ Key: item.Key });
