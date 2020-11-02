@@ -24,18 +24,17 @@ router.get('/getwebcamdata', function (req, res, next) {
   const key = "QLDTrafficResults";
   cache.on("connect", () => {
     cache.get(key, function (err, cacheRes) {
-      if (cacheRes) { // Return the data from the cache if it's there and update the expiry
-        cache.expire(key, 10 * 60);
+      if (cacheRes) { // Return the data from the cache if it's there
         res.json(JSON.parse(cacheRes));
         cache.quit();
 
       } else { // Otherwise fetch it from S3 and add it to the cache
         s3.getObject({ Bucket: bucketName, Key: key }, (err, s3Result) => {
           if (s3Result) {
-            cache.set(key, s3Result.Body, 'EX', 10 * 60);
+            cache.set(key, s3Result.Body, 'EX', 600);
             res.json(JSON.parse(s3Result.Body));
           } else {
-            res.json[{}]; // Just a blank response
+            res.json([{}]); // Just a blank response
           }
           cache.quit();
         });
@@ -51,7 +50,6 @@ router.get('/getcountsandboxes/:id', function (req, res, next) {
   //const cache = redis.createClient(6379, 'alex-ethan-ass2-cache.km2jzi.ng.0001.apse2.cache.amazonaws.com');
 
   cache.on("connect", () => {
-
     cache.mget(`${id}:CurrentCount`, `${id}:DayCount`, `${id}:PredictionBoxes`, (err, response) => {
       if (response[0] !== null) {
         response[0] = parseInt(response[0]);

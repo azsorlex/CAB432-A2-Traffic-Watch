@@ -48,7 +48,7 @@ router.get('/refreshpredictions/:id/:url', function (req, res, next) {
             }
           });
 
-          cache.set(`${id}:PredictionBoxes`, JSON.stringify(predictionBoxes), 'EX', 180);
+          cache.set(`${id}:PredictionBoxes`, JSON.stringify(predictionBoxes), 'EX', 300);
 
           // Update the current count by adding what was currently detected on top of the current total
           cache.get(`${id}:CurrentCount`, function (err, response) {
@@ -58,7 +58,7 @@ router.get('/refreshpredictions/:id/:url', function (req, res, next) {
             } else {
               value = predictionBoxes.length;
             }
-            cache.set(`${id}:CurrentCount`, value.toString(), 'EX', 180);
+            cache.set(`${id}:CurrentCount`, value.toString(), 'EX', 3600);
           });
 
           cache.get(`${id}:DayCount`, function (err, response) {
@@ -68,7 +68,7 @@ router.get('/refreshpredictions/:id/:url', function (req, res, next) {
             } else {
               value = predictionBoxes.length;
             }
-            cache.set(`${id}:DayCount`, value.toString(), 'EX', 2 * 60 * 60);
+            cache.set(`${id}:DayCount`, value.toString(), 'EX', 7200);
           });
         });
     });
@@ -101,6 +101,7 @@ router.get('/updatehourlycounts/:id', function (req, res, next) {
         .then(() => {
           console.log(`Successfully uploaded ${s3Key} to ${bucketName}`);
           cache.del(cacheKey);
+          cache.del(`${id}:PredictionBoxes`);
         })
         .catch((error) => console.log(error));
     });
